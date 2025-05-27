@@ -71,7 +71,7 @@ class GRPORunner:
 
         quantization = parse_quantization(model_name)
 
-        if training_args.vllm_gpu_memory_utilization != 0.85:  # Not default
+        if training_args.vllm_gpu_memory_utilization != 0.79:  # Not default
             self.peak_memory_percentage = training_args.vllm_gpu_memory_utilization
         else:
             self.peak_memory_percentage = estimate_peak_mem_percentage(
@@ -89,7 +89,7 @@ class GRPORunner:
                 use_flash_attention_2=True,
                 use_exact_model_name=True,
                 fast_inference=True,
-                gpu_memory_utilization=0.85,
+                gpu_memory_utilization=0.79,
             )[0]
 
             return FastLanguageModel.get_peft_model(
