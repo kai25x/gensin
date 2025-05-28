@@ -1,4 +1,3 @@
-Goku [REKT], [28-05-2025 00:38]
 from collections import OrderedDict
 from enum import Enum
 import re
@@ -151,8 +150,7 @@ def estimate_peak_mem_percentage(
     # Buffer for safety
     estimate *= 1.5 if model_param_b <= 32 else 1.25
 
-Goku [REKT], [28-05-2025 00:38]
-# Get available memory
+    # Get available memory
     if torch.cuda.is_available():
         device = torch.device(grpo_config.vllm_device or "cuda:0")
         free = get_cuda_free_memory(device)
