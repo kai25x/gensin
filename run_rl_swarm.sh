@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 set -euo pipefail
@@ -55,7 +56,7 @@ ROOT_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
 
 # Function to clean up the server process upon exit
 cleanup() {
-    echo_green ">> Shutting down trainer..."
+    echo_green "🛑 Shutting down trainer... Bye! 👋"
 
     # Remove modal credentials if they exist
     rm -r $ROOT_DIR/modal-login/temp-data/*.json 2> /dev/null || true
@@ -72,16 +73,14 @@ echo -e "\033[38;5;224m"
 cat << "EOF"
 ____  ___        .__ .__                                       ________ ________   ________ ________ 
 \   \/  /_____   |__||  |    ____    ____     ____            /  _____//   __   \ /  _____//   __   \
- \     / \__  \  |  ||  |   /  _ \  /    \   / ___\   ______ /   __  \ \____    //   __  \ \____    / 
- /     \  / __ \_|  ||  |__(  <_> )|   |  \ / /_/  > /_____/ \  |__\  \   /    / \  |__\  \   /    /  
-/___/\  \(____  /|__||____/ \____/ |___|  / \___  /           \_____  /  /____/   \_____  /  /____/   
+ \     / \__  \  |  ||  |   /  _ \  /    \   / ___\   ______ /   __  \ \____    //   __  \ \____    /
+ /     \  / __ \_|  ||  |__(  <_> )|   |  \ / /_/  > /_____/ \  |__\  \   /    / \  |__\  \   /    / 
+/___/\  \(____  /|__||____/ \____/ |___|  / \___  /           \_____  /  /____/   \_____  /  /____/  
       \_/     \/                        \/ /_____/                  \/                  \/           
-
-🚀 Welcome to the RL Swarm!
-🤝 🙌 Shoutout to the brilliant minds at the Gensyn Team! 🔥
-🧠💻 Together, we’re pushing the boundaries of collaborative AI training!
-🌍 Let's make AI smarter, stronger, and more open—together!
 EOF
+echo -e "\n✨ Welcome to the Gensyn RL Swarm Trainer! 🚀\n"
+echo_green "Let's get you connected and training with the swarm! 🔥"
+echo_blue "Remember: Teamwork makes the dream work! 🤝\n"
 
 while true; do
     echo -en $GREEN_TEXT
@@ -122,9 +121,12 @@ while true; do
     esac
 done
 
+# Create logs directory if it doesn't exist
+mkdir -p "$ROOT/logs"
+
 if [ "$CONNECT_TO_TESTNET" = true ]; then
     # Run modal_login server.
-    echo "Please login to create an Ethereum Server Wallet"
+    echo "🦾 Please login to create an Ethereum Server Wallet"
     cd modal-login
     # Check if the yarn command exists; if not, install Yarn.
 
@@ -151,47 +153,9 @@ if [ "$CONNECT_TO_TESTNET" = true ]; then
             sudo apt update && sudo apt install -y yarn
         else
             echo "Yarn not found. Installing Yarn globally with npm (no profile edits)…"
-            # This lands in $NVM_DIR/versions/node/<ver>/bin which is already on PATH
             npm install -g --silent yarn
         fi
     fi
-    yarn install
-    yarn dev > /dev/null 2>&1 & # Run in background and suppress output
-
-    SERVER_PID=$!  # Store the process ID
-    echo "Started server process: $SERVER_PID"
-    sleep 5
-
-    # Try to open the URL in the default browser
-    if open http://localhost:3000 2> /dev/null; then
-        echo_green ">> Successfully opened http://localhost:3000 in your default browser."
-    else
-        echo ">> Failed to open http://localhost:3000. Please open it manually."
-    fi
-
-    cd ..
-
-    echo_green ">> Waiting for modal userData.json to be created..."
-    while [ ! -f "modal-login/temp-data/userData.json" ]; do
-        sleep 5  # Wait for 5 seconds before checking again
-    done
-    echo "Found userData.json. Proceeding..."
-
-    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
-    echo "Your ORG_ID is set to: $ORG_ID"
-
-    # Wait until the API key is activated by the client
-    echo "Waiting for API key to become activated..."
-    while true; do
-        STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
-        if [[ "$STATUS" == "activated" ]]; then
-            echo "API key is activated! Proceeding..."
-            break
-        else
-            echo "Waiting for API key to be activated..."
-            sleep 5
-        fi
-    done
 
     ENV_FILE="$ROOT"/modal-login/.env
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -201,9 +165,49 @@ if [ "$CONNECT_TO_TESTNET" = true ]; then
         # Linux version
         sed -i "3s/.*/SMART_CONTRACT_ADDRESS=$SWARM_CONTRACT/" "$ENV_FILE"
     fi
+
+    yarn install --immutable
+    echo "Building server..."
+    yarn build > "$ROOT/logs/yarn.log" 2>&1
+    yarn start >> "$ROOT/logs/yarn.log" 2>&1 & # Run in background and log output
+
+    SERVER_PID=$!  # Store the process ID
+    echo "🚀 Started server process: $SERVER_PID"
+    sleep 5
+
+    # Try to open the URL in the default browser
+    if open http://localhost:3000 2> /dev/null; then
+        echo_green "🎉 Successfully opened http://localhost:3000 in your default browser."
+    else
+        echo "⚠️ Failed to open http://localhost:3000. Please open it manually."
+    fi
+
+    cd ..
+
+    echo_green "⏳ Waiting for modal userData.json to be created..."
+    while [ ! -f "modal-login/temp-data/userData.json" ]; do
+        sleep 5  # Wait for 5 seconds before checking again
+    done
+    echo "✅ Found userData.json. Proceeding..."
+
+    ORG_ID=$(awk 'BEGIN { FS = "\"" } !/^[ \t]*[{}]/ { print $(NF - 1); exit }' modal-login/temp-data/userData.json)
+    echo "🔑 Your ORG_ID is set to: $ORG_ID"
+
+    # Wait until the API key is activated by the client
+    echo "🔄 Waiting for API key to become activated..."
+    while true; do
+        STATUS=$(curl -s "http://localhost:3000/api/get-api-key-status?orgId=$ORG_ID")
+        if [[ "$STATUS" == "activated" ]]; then
+            echo "✅ API key is activated! Proceeding..."
+            break
+        else
+            echo "⌛ Waiting for API key to be activated..."
+            sleep 5
+        fi
+    done
 fi
 
-echo_green ">> Getting requirements..."
+echo_green "🛠️ Installing requirements..."
 
 pip install --upgrade pip
 if [ -n "$CPU_ONLY" ] || ! command -v nvidia-smi &> /dev/null; then
@@ -217,10 +221,11 @@ else
     pip install flash-attn --no-build-isolation
 
     case "$PARAM_B" in
-        32 | 72) CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-bnb-4bit-deepseek-r1.yaml" && break ;;
-        0.5 | 1.5 | 7) CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-deepseek-r1.yaml" && break ;;
-        *)  echo ">>> Please answer in [0.5, 1.5, 7, 32, 72]." ;;
+        32 | 72) CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-bnb-4bit-deepseek-r1.yaml" ;;
+        0.5 | 1.5 | 7) CONFIG_PATH="$ROOT/hivemind_exp/configs/gpu/grpo-qwen-2.5-${PARAM_B}b-deepseek-r1.yaml" ;;
+        *) exit 1 ;;
     esac
+
     if [ "$USE_BIG_SWARM" = true ]; then
         GAME="dapo"
     else
@@ -228,10 +233,10 @@ else
     fi
 fi
 
-echo_green ">> Done!"
+echo_green "✅ Requirements installed!"
 
 HF_TOKEN=${HF_TOKEN:-""}
-if [ -n "${HF_TOKEN}" ]; then # Check if HF_TOKEN is already set and use if so. Else give user a prompt to choose.
+if [ -n "${HF_TOKEN}" ]; then
     HUGGINGFACE_ACCESS_TOKEN=${HF_TOKEN}
 else
     echo -en $GREEN_TEXT
@@ -245,9 +250,9 @@ else
     esac
 fi
 
-echo_green ">> Good luck in the swarm!"
-echo_blue ">> Post about rl-swarm on X/twitter! --> https://tinyurl.com/swarmtweet"
-echo_blue ">> And remember to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
+echo_green "🔥 Good luck in the swarm! Remember to have fun and learn tons! 🌟"
+echo_blue "📢 Spread the word on X/Twitter! --> https://tinyurl.com/swarmtweet"
+echo_blue "⭐ And don't forget to star the repo on GitHub! --> https://github.com/gensyn-ai/rl-swarm"
 
 if [ -n "$ORG_ID" ]; then
     python -m hivemind_exp.gsm8k.train_single_gpu \
